@@ -1,39 +1,162 @@
 import http from 'k6/http';
-import {check} from 'k6';
+import {Counter, Rate} from 'k6/metrics';
+import {check, Trend} from 'k6';
 import {config} from './config.js';
-import {lowFarePayload} from './BoilerPlate.js';
+import {brandedFarePayload, lowFarePayload, orderPayload, pricingPayload, reConfirmPayload} from './BoilerPlate.js';
+
+let token, headers;
+// Error counters
+const errorRate = new Rate('error_rate');
+const successRate = new Rate('success_rate');
+const lowFareErrorRate = new Rate('low_fare_error_rate');
+const lowFareSuccessRate = new Rate('low_fare_success_rate');
+const brandedFareErrorRate = new Rate('branded_fare_error_rate');
+const brandedFareSuccessRate = new Rate('branded_fare_success_rate');
+const pricingErrorRate = new Rate('pricing_error_rate');
+const pricingSuccessRate = new Rate('pricing_success_rate');
+const orderErrorRate = new Rate('order_error_rate');
+const orderSuccessRate = new Rate('order_success_rate');
+const issueErrorRate = new Rate('issue_error_rate');
+const issueSuccessRate = new Rate('issue_success_rate');
+const reConfirmErrorRate = new Rate('re_confirm_error_rate');
+const reConfirmSuccessRate = new Rate('re_confirm_success_rate');
+// Counters
+const lowFareCounter = new Counter('low_fare_counter');
+const brandedFareCounter = new Counter('branded_fare_counter');
+const pricingCounter = new Counter('pricing_counter');
+const orderCounter = new Counter('order_counter');
+const issueCounter = new Counter('issue_counter');
+const reConfirmCounter = new Counter('re_confirm_counter');
+// Trend
+// TODO: Add trend for all the calls
 
 
-export let options = config.getK6Config();
-const Shopping =  () => {
-    // authenticate and get access token
-    let authResponse = http.post(config.authUrl, '', {
+
+
+const auth = () => {
+    const authResponse = http.post(config.authUrl, '', {
         headers: config.getUser()
     });
+    if (authResponse.status !== 200) {
+        console.log("Auth failed: " + authResponse.status)
+        return false;
+    }
+    console.log("Auth successful: " + authResponse.status)
+    token = JSON.parse(authResponse.body).token;
+}
+const getHeaders = (token) => ({
+    Authorization: `Bearer ${token}`,
+    orgId: `${config.orgId}`,
+    'Content-Type': 'application/json',
+})
 
-    check(authResponse, {
-        'Is Auth Response status is 200': (r) => r.status === 200
-    });
 
 
-    const token = JSON.parse(authResponse.body).token;
-    const getHeaders = () => ({
-        Authorization: `Bearer ${token}`,
-        orgId: `${config.orgId}`,
-        'Content-Type': 'application/json',
-    })
-// use access token to make API request
-    let response = http.post(config.offerUrl, lowFarePayload(), {
-        headers: getHeaders()
+const postApi = (url, payload, type = 'Default post call') => {
+    const response = http.post(url, payload, {
+        headers
     });
     check(response, {
-        'Lowfare Response status is 200': (r) => r.status === 200,
-        'Lowfare Response body': (r) => r.body !== '',
-        'Lowfare Response has SessionId': (r) => r.body['sessionId'] !== '',
-        'Lowfare Response has Airlines': (r) => r.body['airlines'] !== '',
+        [`${type}  has response`]: (r) => r.status === 200,
     });
+    if (response.status !== 200) {
+        return false;
+    }
+    return response;
 }
 
-export default function () {
-    Shopping();
+const parseBrandedFareResponse = (response) => {
+    let tokenId, flightOptionKey;
+    const body = JSON.parse(response.body);
+    if (body && body['flightSummary'] && body['flightSummary'].length > 0) {
+        tokenId = body['tokenId'];
+        flightOptionKey = body['flightSummary'][0]['flightOptions']['fo'][0]['key'];
+    }
+    return {tokenId, flightOptionKey};
 }
+
+
+export default function () {
+    // Step 1: Auth
+    if (!token && !headers) {
+        auth();
+        headers = getHeaders(token);
+    }
+    // Step 2: Low Fare
+    const lowFareResponse = postApi(`${config.offerUrl}/lowfare`, lowFarePayload(), 'Low Fare');
+    const sessionId = JSON.parse(lowFareResponse.body)['sessionId'];
+    lowFareCounter.add(1);
+    if (!sessionId) {
+        errorRate.add(1);
+        lowFareErrorRate.add(1);
+        console.log("Session ID not found")
+        return;
+    }
+    lowFareSuccessRate.add(1);
+    // Step 3: Branded Fare
+    const brandedFareResponse = postApi(`${config.offerUrl}/brandedfare`, brandedFarePayload(sessionId), 'Branded Fare');
+    brandedFareCounter.add(1);
+    if (!brandedFareResponse) {
+        errorRate.add(1);
+        brandedFareErrorRate.add(1);
+        console.log("Branded Fare failed")
+        return;
+    }
+    brandedFareSuccessRate.add(1);
+    const {tokenId, flightOptionKey} = parseBrandedFareResponse(brandedFareResponse);
+    if (!tokenId && !flightOptionKey) {
+        errorRate.add(1);
+        console.log("Token ID not found")
+        return;
+    }
+    // Step 4: Pricing
+    const pricingResponse = postApi(`${config.offerUrl}/pricing`, pricingPayload(sessionId, tokenId, flightOptionKey), 'Pricing');
+    pricingCounter.add(1);
+    if (!pricingResponse) {
+        errorRate.add(1);
+        pricingErrorRate.add(1);
+        console.log("Pricing failed")
+        return;
+    }
+    pricingSuccessRate.add(1);
+    // Step 5: Order
+    const createOrderResponse = postApi(`${config.orderUrl}/create-order`, orderPayload(sessionId, tokenId, flightOptionKey), 'Order');
+    orderCounter.add(1);
+    if (!createOrderResponse) {
+        errorRate.add(1);
+        orderErrorRate.add(1);
+        console.log("Order failed")
+        return;
+    }
+    orderSuccessRate.add(1);
+    const bookingReferenceNumber = JSON.parse(createOrderResponse.body)['bookingReferenceNumber'];
+    if (!bookingReferenceNumber) {
+        console.log("Booking Reference Number not found")
+        return;
+    }
+    // Step 6: Order Issue
+    const orderIssueResponse = postApi(`${config.orderUrl}/issue`, reConfirmPayload(sessionId,bookingReferenceNumber), 'Order Issue');
+    issueCounter.add(1);
+    if (!orderIssueResponse) {
+        errorRate.add(1);
+        issueErrorRate.add(1);
+        console.log("Order Issue failed")
+        return;
+    }
+    issueSuccessRate.add(1);
+    // Step 7: Order Reconfirm
+    const orderReConfirmResponse = postApi(`${config.orderUrl}/re-confirm`, reConfirmPayload(sessionId,bookingReferenceNumber), 'Order Reconfirm');
+    reConfirmCounter.add(1);
+    if (!orderReConfirmResponse) {
+        errorRate.add(1);
+        reConfirmErrorRate.add(1);
+        console.log("Order Reconfirm failed")
+        return;
+    }
+    reConfirmSuccessRate.add(1);
+    successRate.add(1);
+
+
+}
+export let options = config.getK6Config();
+
