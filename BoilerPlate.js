@@ -144,19 +144,19 @@ const getItenerary = (tripType = 1) => {
         {
             DepartureCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
             ArrivalCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
-            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            DepartureDate: formatDate(chance.date({ year: 2023 })),
             Ticketclass: 'Y',
         },
         {
             DepartureCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
             ArrivalCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
-            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            DepartureDate: formatDate(chance.date({ year: 2023 })),
             Ticketclass: 'Y',
         },
         {
             DepartureCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
             ArrivalCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
-            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            DepartureDate: formatDate(chance.date({ year: 2023 })),
             Ticketclass: 'Y',
         },
     ];
