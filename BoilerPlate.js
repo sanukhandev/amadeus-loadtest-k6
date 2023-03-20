@@ -3,34 +3,16 @@ import moment from 'https://cdn.skypack.dev/moment';
 
 const chance = new Chance();
 
-export const lowFarePayload= () => {
+export const lowFarePayload= (tripType, paxCount) => {
+
     let payload = {
-        TripType: '3',
-        Adults: '1',
+        TripType: tripType+'',
+        Adults: paxCount+'',
         Children: '0',
         Infants: '0',
-        Itineraries: [
-            {
-                DepartureCode: 'BOM',
-                ArrivalCode: 'DXB',
-                DepartureDate: '25 Mar 2023',
-                Ticketclass: 'Y'
-            },
-            {
-                DepartureCode: 'DXB',
-                ArrivalCode: 'LON',
-                DepartureDate: '25 Apr 2023',
-                Ticketclass: 'Y'
-            },
-            {
-                DepartureCode: 'LON',
-                ArrivalCode: 'BOM',
-                DepartureDate: '10 May 2023',
-                Ticketclass: 'Y'
-            }
-        ],
+        Itineraries: getItenerary(tripType),
         LangCode: 'EN',
-        AirlineCode: 'EK',
+        AirlineCode: chance.pickone(['EK', 'EY', 'QR', 'BA']),
         IsDirectFlight: false,
         IsBaggageOnly: false,
         Refundable: false,
@@ -64,7 +46,7 @@ export const pricingPayload = (sessionId, tokenId, foKey) => {
     }
     return JSON.stringify(payload);
 }
-export const orderPayload = (sessionId, tokenId, foKey) => {
+export const orderPayload = (sessionId, tokenId, foKey, paxCount) => {
     let payload = {
         SessionId: sessionId,
         payment_mode: "WALLET",
@@ -77,7 +59,7 @@ export const orderPayload = (sessionId, tokenId, foKey) => {
                     }
                 ],
                 token: tokenId,
-                passengerDetails: generateCustomers(Math.floor(Math.random() * 3) + 1),
+                passengerDetails: generateCustomers(paxCount),
                 clientDetails: {
                     EmailAddress: "shahzad.infohybrid@gmail.com",
                     MobileNo: 1234567890,
@@ -155,5 +137,30 @@ const generateCustomers = (count) => {
     }
     return customers;
 };
+
+
+const getItenerary = (tripType = 1) => {
+    const itinerary = [
+        {
+            DepartureCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
+            ArrivalCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
+            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            Ticketclass: 'Y',
+        },
+        {
+            DepartureCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
+            ArrivalCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
+            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            Ticketclass: 'Y',
+        },
+        {
+            DepartureCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
+            ArrivalCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
+            DepartureDate: chance.date({ year: 2023 }).toLocaleDateString(),
+            Ticketclass: 'Y',
+        },
+    ];
+    return itinerary.slice(0, tripType);
+}
 
 

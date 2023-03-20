@@ -81,8 +81,10 @@ export default function () {
         auth();
         headers = getHeaders(token);
     }
+    const paxCount = 1;
+    const tripType = 1;
     // Step 2: Low Fare
-    const lowFareResponse = postApi(`${config.offerUrl}/lowfare`, lowFarePayload(), 'Low Fare');
+    const lowFareResponse = postApi(`${config.offerUrl}/lowfare`, lowFarePayload(tripType,paxCount), 'Low Fare');
     const sessionId = JSON.parse(lowFareResponse.body)['sessionId'];
     lowFareCounter.add(1);
     if (!sessionId) {
@@ -115,7 +117,7 @@ export default function () {
     }
     pricingSuccessRate.add(1);
     // Step 5: Order
-    const createOrderResponse = postApi(`${config.orderUrl}/create-order`, orderPayload(sessionId, tokenId, flightOptionKey), 'Order');
+    const createOrderResponse = postApi(`${config.orderUrl}/create-order`, orderPayload(sessionId, tokenId, flightOptionKey,paxCount), 'Order');
     orderCounter.add(1);
     if (!createOrderResponse) {
         orderErrorRate.add(1);
