@@ -1,8 +1,7 @@
 import http from 'k6/http';
 import {Counter, Rate} from 'k6/metrics';
-import {check, Trend} from 'k6';
-import {config} from './config.js';
-import papaparse from "https://jslib.k6.io/papaparse/5.1.1/index.js";
+import {check} from 'k6';
+import {config} from './Config.js';
 import {brandedFarePayload, lowFarePayload, orderPayload, pricingPayload, reConfirmPayload} from './BoilerPlate.js';
 
 let token, headers;
@@ -30,41 +29,6 @@ const issueCounter = new Counter('issue_counter');
 const reConfirmCounter = new Counter('re_confirm_counter');
 // Trend
 // TODO: Add trend for all the calls
-
-
-function formatInfluxData(measurement, tags, fields, timestamp) {
-    const tagSet = [];
-    const fieldSet = [];
-    const tagKeys = Object.keys(tags);
-    const fieldKeys = Object.keys(fields);
-    for (let i = 0; i < tagKeys.length; i++) {
-        const key = tagKeys[i];
-        tagSet.push(`${key}=${tags[key]}`);
-    }
-    for (let i = 0; i < fieldKeys.length; i++) {
-        const key = fieldKeys[i];
-        fieldSet.push(`${key}=${fields[key]}`);
-    }
-    const tagString = tagSet.join(',');
-    const fieldString = fieldSet.join(',');
-    return `${measurement},${tagString} ${fieldString} ${timestamp}`;
-}
-
-const sendDataToInflux = ({measurement, tags, fields, timestamp}) => {
-    const influxData = formatInfluxData(measurement, tags, fields, timestamp);
-    const options = {
-        headers: {
-            'Content-Type': 'application/octet-stream',
-        },
-    };
-    let influxdb = config.getInfluxDB();
-    console.log(influxdb.url)
-    const response = http.post(influxdb.url, influxData, options);
-    if (response.status !== 204) {
-        console.error(`Failed to send data to InfluxDB: ${response.body}`);
-    }
-}
-
 const auth = () => {
     const authResponse = http.post(config.authUrl, '', {
         headers: config.getUser()
@@ -191,5 +155,5 @@ export default function () {
 
 
 }
-// export let options = config.getK6Config();
+export let options = config.getK6Config();
 
