@@ -21,6 +21,10 @@ const getK6Config = () => ({
 
 })
 
+const getInfluxDB = () => ({
+    url: __ENV.INFLUXDB_URL,
+})
+
 export const config = {
     baseUrl,
     authUrl,
@@ -28,5 +32,6 @@ export const config = {
     orderUrl,
     getUser,
     getK6Config,
+    getInfluxDB,
     orgId
 }
