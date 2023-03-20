@@ -36,8 +36,6 @@ services:
       - "6565:6565"
     environment:
       - K6_OUT=influxdb=http://influxdb:8086/k6
-      - INFLUXDB_URL=http://influxdb:8086/k6
-      - K6_OUT = csv= /scripts/results.csv
       - BASE_URL=https://flightapiout.aos-dev.com
       - USER_ID=7681e8a2-886c-4d8f-8833-95251447f52e
       - USER_PASSWORD=1C8348479F721F7091CD41223DDCB2DADD503375C3A7EE5FFEE1679D34DDB0E5BC9E067940F258B74266DB383DB36DF6

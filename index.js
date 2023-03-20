@@ -57,8 +57,10 @@ const postApi = (url, payload, type = 'Default post call') => {
     });
 
     if (response.status !== 200) {
+        errorRate.add(1);
         return false;
     }
+    successRate.add(1);
     return response;
 }
 
@@ -84,7 +86,6 @@ export default function () {
     const sessionId = JSON.parse(lowFareResponse.body)['sessionId'];
     lowFareCounter.add(1);
     if (!sessionId) {
-        errorRate.add(1);
         lowFareErrorRate.add(1);
         console.log("Session ID not found")
         return;
@@ -94,7 +95,6 @@ export default function () {
     const brandedFareResponse = postApi(`${config.offerUrl}/brandedfare`, brandedFarePayload(sessionId), 'Branded Fare');
     brandedFareCounter.add(1);
     if (!brandedFareResponse) {
-        errorRate.add(1);
         brandedFareErrorRate.add(1);
         console.log("Branded Fare failed")
         return;
@@ -102,7 +102,6 @@ export default function () {
     brandedFareSuccessRate.add(1);
     const {tokenId, flightOptionKey} = parseBrandedFareResponse(brandedFareResponse);
     if (!tokenId && !flightOptionKey) {
-        errorRate.add(1);
         console.log("Token ID not found")
         return;
     }
@@ -110,7 +109,6 @@ export default function () {
     const pricingResponse = postApi(`${config.offerUrl}/pricing`, pricingPayload(sessionId, tokenId, flightOptionKey), 'Pricing');
     pricingCounter.add(1);
     if (!pricingResponse) {
-        errorRate.add(1);
         pricingErrorRate.add(1);
         console.log("Pricing failed")
         return;
@@ -120,7 +118,6 @@ export default function () {
     const createOrderResponse = postApi(`${config.orderUrl}/create-order`, orderPayload(sessionId, tokenId, flightOptionKey), 'Order');
     orderCounter.add(1);
     if (!createOrderResponse) {
-        errorRate.add(1);
         orderErrorRate.add(1);
         console.log("Order failed")
         return;
@@ -135,7 +132,6 @@ export default function () {
     const orderIssueResponse = postApi(`${config.orderUrl}/issue`, reConfirmPayload(sessionId,bookingReferenceNumber), 'Order Issue');
     issueCounter.add(1);
     if (!orderIssueResponse) {
-        errorRate.add(1);
         issueErrorRate.add(1);
         console.log("Order Issue failed")
         return;
@@ -145,13 +141,11 @@ export default function () {
     const orderReConfirmResponse = postApi(`${config.orderUrl}/re-confirm`, reConfirmPayload(sessionId,bookingReferenceNumber), 'Order Reconfirm');
     reConfirmCounter.add(1);
     if (!orderReConfirmResponse) {
-        errorRate.add(1);
         reConfirmErrorRate.add(1);
         console.log("Order Reconfirm failed")
         return;
     }
     reConfirmSuccessRate.add(1);
-    successRate.add(1);
 
 
 }

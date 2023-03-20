@@ -1,3 +1,8 @@
+import Chance from 'https://cdn.skypack.dev/chance';
+import moment from 'https://cdn.skypack.dev/moment';
+
+const chance = new Chance();
+
 export const lowFarePayload= () => {
     let payload = {
         TripType: '3',
@@ -72,28 +77,7 @@ export const orderPayload = (sessionId, tokenId, foKey) => {
                     }
                 ],
                 token: tokenId,
-                passengerDetails: [
-                    {
-                        PassengerType: "Adult",
-                        Title: "Mr",
-                        FirstName: "Sanu",
-                        MiddleName: "",
-                        LastName: "Khan",
-                        DateOfBirth: "24 Sep 1993",
-                        Gender: "male",
-                        FormofIdentityNumber: "",
-                        Document: [
-                            {
-                                DocumentType: "Passport",
-                                DocumentNumber: "SX1234567",
-                                DocumentIssuingCountry: "IN",
-                                Nationality: "IN",
-                                DocumentIssueDate: "06 Sep 2019",
-                                DocumentExpiryDate: "06 Sep 2029"
-                            }
-                        ]
-                    }
-                ],
+                passengerDetails: generateCustomers(Math.floor(Math.random() * 3) + 1),
                 clientDetails: {
                     EmailAddress: "shahzad.infohybrid@gmail.com",
                     MobileNo: 1234567890,
@@ -120,4 +104,56 @@ export const reConfirmPayload = (sessionId, bookindId) => {
     }
     return JSON.stringify(payload);
 }
+
+
+
+
+const generateCustomer = () => {
+    const title = chance.pickone(['Mr', 'Mrs', 'Miss']);
+    const firstName = chance.first();
+    const middleName = chance.first();
+    const lastName = chance.last();
+    const dob = formatDate(chance.birthday({  year: 1980 }));
+    const gender = chance.gender();
+    const docType = chance.pickone(['Passport']);
+    const docNumber = chance.string({ length: 9, pool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890' });
+    const docIssuingCountry = chance.country({ full: true });
+    const nationality = chance.country({ full: true });
+    const docIssueDate = formatDate(chance.date({  year: 2015 }));
+    const docExpiryDate = formatDate(chance.date({ year: 2030 }));
+
+    return {
+        PassengerType: 'Adult',
+        Title: title,
+        FirstName: firstName,
+        MiddleName: middleName,
+        LastName: lastName,
+        DateOfBirth: dob,
+        Gender: gender,
+        FormofIdentityNumber: '',
+        Document: [
+            {
+                DocumentType: docType,
+                DocumentNumber: docNumber,
+                DocumentIssuingCountry: docIssuingCountry,
+                Nationality: nationality,
+                DocumentIssueDate: docIssueDate,
+                DocumentExpiryDate: docExpiryDate,
+            },
+        ],
+    };
+};
+
+const formatDate = (date) => {
+    return moment(date).format('DD MMM YYYY');
+}
+
+const generateCustomers = (count) => {
+    const customers = [];
+    for (let i = 0; i < count; i++) {
+        customers.push(generateCustomer());
+    }
+    return customers;
+};
+
 
