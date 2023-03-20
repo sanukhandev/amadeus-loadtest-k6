@@ -14,16 +14,14 @@ const orgId = __ENV.ORG_ID
 
 const getK6Config = () => ({
     stages: [
-        {duration: '1m', target: 50},
-        {duration: '3m', target: 50},
-        {duration: '1m', target: 10}
+        {duration: '1m', target: 5},
+        {duration: '1m', target: 10},
+        {duration: '1m', target: 3}
     ],
 
 })
 
-const getInfluxDB = () => ({
-    url: __ENV.INFLUXDB_URL,
-})
+
 
 export const config = {
     baseUrl,
@@ -32,6 +30,5 @@ export const config = {
     orderUrl,
     getUser,
     getK6Config,
-    getInfluxDB,
     orgId
 }
