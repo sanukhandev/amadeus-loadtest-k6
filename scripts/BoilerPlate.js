@@ -12,7 +12,7 @@ export const lowFarePayload= (tripType, paxCount) => {
         Infants: '0',
         Itineraries: getItenerary(tripType),
         LangCode: 'EN',
-        AirlineCode: chance.pickone(['EK', 'EY', 'QR', 'BA']),
+        AirlineCode: chance.pickone(['EK', 'BA']),
         IsDirectFlight: false,
         IsBaggageOnly: false,
         Refundable: false,
@@ -144,19 +144,19 @@ const getItenerary = (tripType = 1) => {
         {
             DepartureCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
             ArrivalCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
-            DepartureDate: formatDate(chance.date({ year: 2023 })),
+            DepartureDate: formatDate(chance.date({ year: 2023, month: (new Date()).getMonth()+1 })),
             Ticketclass: 'Y',
         },
         {
             DepartureCode: chance.pickone(['DXB', 'AUH', 'DOH', 'SIN', 'KUL']),
             ArrivalCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
-            DepartureDate: formatDate(chance.date({ year: 2023 })),
+            DepartureDate: formatDate(chance.date({ year: 2023, month: (new Date()).getMonth()+2 })),
             Ticketclass: 'Y',
         },
         {
             DepartureCode: chance.pickone(['LON', 'NYC', 'PAR', 'MAD', 'ROM']),
             ArrivalCode: chance.pickone(['BOM', 'DEL', 'BLR', 'MAA']),
-            DepartureDate: formatDate(chance.date({ year: 2023 })),
+            DepartureDate: formatDate(chance.date({ year: 2023, month: (new Date()).getMonth()+3 })),
             Ticketclass: 'Y',
         },
     ];

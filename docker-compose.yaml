@@ -41,4 +41,14 @@ services:
       - USER_PASSWORD=1C8348479F721F7091CD41223DDCB2DADD503375C3A7EE5FFEE1679D34DDB0E5BC9E067940F258B74266DB383DB36DF6
       - ORG_ID=2112080905210313767
     volumes:
-      - .:/scripts
+      - ./scripts:/scripts
+    user: root
+
+  my-node-app:
+    image: my-node-app
+    networks:
+      - k6
+    ports:
+      - "8080:8080"
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086/k6

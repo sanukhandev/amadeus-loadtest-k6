@@ -19,6 +19,7 @@ const getK6Config = () => ({
         {duration: '1m', target: 3}
     ],
 
+
 })
 
 
