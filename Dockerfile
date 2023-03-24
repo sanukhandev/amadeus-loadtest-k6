@@ -20,4 +20,4 @@ ENV INFLUXDB_URL=http://influxdb:8086/k6
 EXPOSE 8080
 
 # Start the app
-CMD [ "npm", "start" ]
+CMD [ "npm", "start","--network=host" ]

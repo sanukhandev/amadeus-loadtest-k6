@@ -32,6 +32,10 @@ const reConfirmCounter = new Counter('re_confirm_counter');
 // Trend
 // TODO: Add trend for all the calls
 
+const measurements = {
+    logs: `write-data-to-influx`,
+    data: `write-ticket-pnr-data-to-influx`
+}
 
 
 
@@ -56,11 +60,12 @@ const getHeaders = (token) => ({
 
 
 
-function writeResponseToInflux(data) {
-   // const response = http.post('http://influxdb:8086/write?db=k6', JSON.stringify(data), {});
-    const response = http.post('http://localhost:8080/api/write-data-to-influx', JSON.stringify(data), {});
-    console.log(response);
-
+async function writeResponseToInflux(data, measurement = 'logs') {
+   http.post(`http://my-node-app:8080/api/${measurements[measurement]}`, JSON.stringify(data),{
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
 }
 
 const postApi = (url, payload, type = 'Default post call') => {
@@ -75,8 +80,8 @@ const postApi = (url, payload, type = 'Default post call') => {
         status: response.status,
         duration: response.timings.duration,
         timestamp: new Date().toISOString(),
-        payload: JSON.stringify(payload),
-        response: JSON.stringify(response.body),
+        payload,
+        response: response.body,
     }
     writeResponseToInflux(data);
     if (response.status !== 200) {
@@ -148,11 +153,23 @@ export default function () {
         return;
     }
     orderSuccessRate.add(1);
-    const bookingReferenceNumber = JSON.parse(createOrderResponse.body)['bookingReferenceNumber'];
-    if (!bookingReferenceNumber) {
+    const {result, hasResult} = JSON.parse(createOrderResponse.body)
+    if (!hasResult) {
         console.log("Booking Reference Number not found")
         return;
     }
+    const bookingReferenceNumber = result['bookingReferenceNumber'];
+    const bookingId = result['bookingID'];
+    const PNR = result['pnrDetailRs'].map(x => x['pnrNumber']).join(',');
+
+    const data = {
+        bookingReferenceNumber,
+        bookingId,
+        PNR,
+    }
+    writeResponseToInflux(data, 'data');
+
+
     // Step 6: Order Issue
     const orderIssueResponse = postApi(`${config.orderUrl}/issue`, reConfirmPayload(sessionId, bookingReferenceNumber), 'Order Issue');
     issueCounter.add(1);
@@ -161,6 +178,8 @@ export default function () {
         console.log("Order Issue failed")
         return;
     }
+
+
     issueSuccessRate.add(1);
     // Step 7: Order Reconfirm
     const orderReConfirmResponse = postApi(`${config.orderUrl}/re-confirm`, reConfirmPayload(sessionId, bookingReferenceNumber), 'Order Reconfirm');
@@ -178,6 +197,6 @@ export default function () {
 }
 
 
-// export let options = config.getK6Config();
+export let options = config.getK6Config();
 
 

@@ -12,7 +12,7 @@ export const lowFarePayload= (tripType, paxCount) => {
         Infants: '0',
         Itineraries: getItenerary(tripType),
         LangCode: 'EN',
-        AirlineCode: chance.pickone(['EK', 'BA']),
+        AirlineCode: chance.pickone(['EK']),
         IsDirectFlight: false,
         IsBaggageOnly: false,
         Refundable: false,
