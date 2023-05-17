@@ -83,7 +83,7 @@ const postApi = (url, payload, type = 'Default post call') => {
         payload,
         response: response.body,
     }
-    writeResponseToInflux(data);
+    writeResponseToInflux(data).then(r => console.log("Response written to influx"));
     if (response.status !== 200) {
         errorRate.add(1);
         return false;
@@ -167,7 +167,7 @@ export default function () {
         bookingId,
         PNR,
     }
-    writeResponseToInflux(data, 'data');
+    writeResponseToInflux(data, 'data').then(r => console.log("Response written to influx"));
 
 
     // Step 6: Order Issue
